@@ -1,15 +1,15 @@
-import React, { useLayoutEffect, useState, useEffect, useCallback, useContext } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, StyleSheet, Image, FlatList, TouchableOpacity } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../context/FavoritesContext';
 import Toast from 'react-native-toast-message';
 import ThemeContext from '../context/ThemeContext';
+import * as Speech from 'expo-speech'; // Import thư viện expo-speech
 
 const MealsScreen = () => {
   const route = useRoute();
-  const navigation = useNavigation();
   const { categoryId } = route.params;
   const { addFavorite, removeFavorite, isFavorite: checkIsFavorite } = useFavorites();
   const [category, setCategory] = useState(null);
@@ -17,6 +17,7 @@ const MealsScreen = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const { isDarkMode } = useContext(ThemeContext);
 
+  // Hàm thêm/bỏ yêu thích và hiển thị thông báo tương ứng
   const toggleFavorite = () => {
     if (!category) return;
     if (isFavorite) {
@@ -37,6 +38,17 @@ const MealsScreen = () => {
     setIsFavorite(!isFavorite);
   };
 
+  // Hàm đọc tên danh mục bằng giọng nói
+  const speakCategoryName = (name) => {
+    Speech.speak(name); // Đọc tên danh mục bằng expo-speech
+  };
+
+  // Hàm đọc tên món ăn bằng giọng nói
+  const speakMealName = (name) => {
+    Speech.speak(name); // Đọc tên món ăn bằng expo-speech
+  };
+
+  // Fetch dữ liệu từ API và kiểm tra trạng thái yêu thích
   useEffect(() => {
     const fetchCategory = async () => {
       try {
@@ -75,7 +87,7 @@ const MealsScreen = () => {
   }
 
   const renderMealItem = ({ item }) => (
-    <TouchableOpacity style={styles.mealItem}>
+    <TouchableOpacity style={styles.mealItem} onPress={() => speakMealName(item.strMeal)}>
       <Text style={isDarkMode ? styles.darkText : styles.lightText}>{item.strMeal}</Text>
     </TouchableOpacity>
   );
@@ -89,7 +101,9 @@ const MealsScreen = () => {
         ListHeaderComponent={
           <View style={[styles.header, isDarkMode ? styles.darkHeader : styles.lightHeader]}>
             <Image source={{ uri: category.strCategoryThumb }} style={styles.image} />
-            <Text style={[styles.title, isDarkMode ? styles.darkText : styles.lightText]}>{category.strCategory}</Text>
+            <Text style={[styles.title, isDarkMode ? styles.darkText : styles.lightText]} onPress={() => speakCategoryName(category.strCategory)}>
+              {category.strCategory}
+            </Text>
             <Text style={[styles.description, isDarkMode ? styles.darkDescription : styles.lightDescription]}>
               {category.strCategoryDescription}
             </Text>

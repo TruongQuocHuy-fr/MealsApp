@@ -1,26 +1,37 @@
-import React, { useEffect, useState, useContext} from 'react';
-import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, useContext } from 'react';
+import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import ThemeContext from '../context/ThemeContext';
+import SearchBar from '../components/SearchBar';  
 
 const CategoriesScreen = () => {
   const [categories, setCategories] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false); 
   const navigation = useNavigation();
   const { isDarkMode } = useContext(ThemeContext);
-  
+
   useEffect(() => {
     const fetchCategories = async () => {
+      setLoading(true);
       try {
         const response = await axios.get('https://www.themealdb.com/api/json/v1/1/categories.php');
         setCategories(response.data.categories);
       } catch (error) {
         console.error("Error fetching categories: ", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchCategories();
   }, []);
+
+  // Lọc danh mục dựa trên từ khóa tìm kiếm
+  const filteredCategories = categories.filter(category =>
+    category.strCategory.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const renderCategoryItem = ({ item }) => (
     <TouchableOpacity
@@ -31,18 +42,26 @@ const CategoriesScreen = () => {
       })}
     >
       <Image source={{ uri: item.strCategoryThumb }} style={styles.categoryImage} />
-      <Text style={[styles.categoryTitle, isDarkMode ? styles.darkText : styles.lightText]}>{item.strCategory}</Text>
+      <Text style={[styles.categoryTitle, isDarkMode ? styles.darkText : styles.lightText]}>
+        {item.strCategory}
+      </Text>
     </TouchableOpacity>
   );
 
   return (
     <View style={[styles.container, isDarkMode ? styles.darkContainer : styles.lightContainer]}>
-      <FlatList
-        data={categories}
-        renderItem={renderCategoryItem}
-        keyExtractor={(item) => item.idCategory}
-        numColumns={2}
-      />
+      <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} isDarkMode={isDarkMode} />
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#ff6347" />
+      ) : (
+        <FlatList
+          data={filteredCategories}
+          renderItem={renderCategoryItem}
+          keyExtractor={(item) => item.idCategory}
+          numColumns={2}
+        />
+      )}
     </View>
   );
 };
@@ -51,12 +70,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-  },
-  lightContainer: {
-    backgroundColor: '#fff',
-  },
-  darkContainer: {
-    backgroundColor: '#333',
   },
   categoryItem: {
     flex: 1,
@@ -92,6 +105,12 @@ const styles = StyleSheet.create({
   },
   darkText: {
     color: '#fff',
+  },
+  lightContainer: {
+    backgroundColor: '#fff',
+  },
+  darkContainer: {
+    backgroundColor: '#333',
   },
 });
 
